@@ -4,6 +4,9 @@
   - 머신러닝 앙상블 기반의 불확실성 추정을 반영한 주택가격 예측에 관한 연구
   
 - 참고 문헌
+  - 단독주택가격 추정을 위한 기계학습 모형의 응용
+  - 수도권 주택가격 결정요인 변화 연구
+  - 주택가격지수 모형의 비교연구
   - House Price Prediction using Random Forest Machine Learning Technique
   - Location-Centered House Price Prediction: A Multi-Task Learning Approach
   - Deep Neural Network As a Tool for Appraising Housing Prices: A Case Study of Busan, South Korea
