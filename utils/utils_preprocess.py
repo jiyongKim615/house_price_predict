@@ -228,11 +228,12 @@ def get_log_transform(df, target):
 
 def concat_train_test(train_df, test_df, target):
     n_train = train_df.shape[0]
+    y_train = train_df[target].values
     all_data = pd.concat((train_df, test_df)).reset_index(drop=True)
     all_data.drop([target], axis=1, inplace=True)
     print("all_data size is : {}".format(all_data.shape))
 
-    return all_data, n_train
+    return all_data, n_train, y_train
 
 
 def fill_na_with_zero(all_data, feature):
