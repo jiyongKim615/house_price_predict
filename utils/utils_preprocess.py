@@ -7,6 +7,7 @@ from scipy.stats import norm, skew  # for some statistics
 from scipy import stats
 from sklearn.preprocessing import LabelEncoder
 from scipy.special import boxcox1p
+from sklearn.model_selection import train_test_split
 warnings.filterwarnings('ignore')
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)

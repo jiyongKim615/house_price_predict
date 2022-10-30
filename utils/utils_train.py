@@ -10,15 +10,10 @@ from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin, clone
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.model_selection import RepeatedKFold
 from pyod.models.ecod import ECOD
-from sklearn.metrics import mean_squared_error
-import xgboost as xgb
-from optuna import create_study
-from optuna.samplers import TPESampler
-from optuna.integration import XGBoostPruningCallback
-import lightgbm as lgb
 
 # Validation function
-from utils.utils_optuna import XGBRegressorOptuna, CatBoostRegressorOptuna
+from utils.utils_optuna import *
+from utils.utils_optuna import XGBRegressorOptuna
 
 n_folds = 5
 
@@ -108,17 +103,17 @@ class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
         return self.meta_model_.predict(meta_features)
 
 
-def final_xgboost(X_train, y_train, X_test, category_feature):
+def final_xgboost(X_train_df, y_train_df, X_test_df, category_feature):
     xgboptuna_reg = XGBRegressorOptuna()
 
-    params, preds_xgb = xgboptuna_reg.optimize(X_train,
-                                               y_train,
-                                               test_data=X_test,
+    xgb_params, preds_xgb = xgboptuna_reg.optimize(X_train_df,
+                                               y_train_df,
+                                               test_data=X_test_df,
                                                # int, str 타입 이어야 한다. float는 허용하지 않음
                                                cat_features=category_feature,
-                                               eval_metric='rmse', n_trials=3)
-    model_xgb = xgb.XGBRegressor(**params)
-    return model_xgb
+                                               eval_metric='rmse', n_trials=2)
+    model_xgb = xgb.XGBRegressor(**xgb_params)
+    return model_xgb, xgb_params
 
 
 def final_catboost(X_train, y_train, X_test, category_feature):
@@ -132,5 +127,28 @@ def final_catboost(X_train, y_train, X_test, category_feature):
                                                     eval_metric='rmse', n_trials=3)
 
     model_cat = CatBoostRegressor()
-    model_cat.set_params(**params)
+    model_cat.set_params(**params, loss_function='RMSEWithUncertainty')
     return model_cat
+
+
+def final_lgbm(X_train, y_train, X_test, category_feature):
+    lightgbmoptuna_reg = LGBMRegressorOptuna(use_gpu=False)
+
+    lgb_params, preds_lgbm = lightgbmoptuna_reg.optimize(X_train,
+                                                     y_train,
+                                                     test_data=X_test,
+                                                     # int, str 타입 이어야 한다. float는 허용하지 않음
+                                                     cat_features=category_feature,
+                                                     eval_metric='rmse', n_trials=3)
+
+    model_lgb = lgb.LGBMRegressor(**lgb_params)
+    return model_lgb, lgb_params
+
+
+def tune_all_model(X_train_df, y_train_df, X_test_df, category_feature):
+    # lasso, ENet = get_robust_pipeline()
+    model_xgb, xgb_params = final_xgboost(X_train_df, y_train_df, X_test_df, category_feature)
+    # model_cat = final_catboost(X_train_df, y_train_df, X_test_df, category_feature)
+    model_lgbm, lgb_params = final_lgbm(X_train_df, y_train_df, X_test_df, category_feature)
+    # model_svm = final_svm(X_train_df, y_train_df)
+    return model_xgb, xgb_params, model_lgbm, lgb_params

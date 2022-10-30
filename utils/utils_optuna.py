@@ -12,6 +12,9 @@ import os
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import mean_squared_log_error, mean_absolute_error, mean_squared_error
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, log_loss
+from sklearn.svm import SVR
+
+from utils.utils_train import *
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=ExperimentalWarning, module="optuna.multi_objective")
@@ -262,7 +265,7 @@ class LGBMClassifierOptuna(BaseOptuna):
         feval = self.get_feval(num_classes, eval_metric)
 
         gbm = lgb.train(params, dtrain,
-                        early_stopping_rounds=30,
+                        early_stopping_rounds=100,
                         num_boost_round=n_rounds,
                         feval=feval,
                         valid_sets=[dtrain, dtest],
@@ -356,7 +359,7 @@ class LGBMRegressorOptuna(BaseOptuna):
 
         feval = self.get_feval(eval_metric)
         gbm = lgb.train(params, dtrain,
-                        early_stopping_rounds=30,
+                        early_stopping_rounds=100,
                         num_boost_round=n_rounds,
                         feval=feval,
                         valid_sets=[dtrain, dtest],
@@ -455,7 +458,7 @@ class XGBClassifierOptuna(BaseOptuna):
 
         gbm = xgb.train(params, dtrain=dtrain,
                         evals=[(dtrain, 'train'), (dtest, 'eval')],
-                        early_stopping_rounds=50,
+                        early_stopping_rounds=100,
                         num_boost_round=n_rounds,
                         verbose_eval=0
                         )
@@ -763,3 +766,39 @@ def load_prediction_from_file(filename):
 
 def list_saved_models(save_dir='models'):
     return sorted(os.listdir(save_dir))
+
+
+# def svmoptuna(x_train_df, y_train_df):
+#     def objective(trial):
+#         train_x, test_x, train_y, test_y = train_test_split(x_train_df, y_train_df, test_size=0.15, random_state=42)
+#         param = {
+#             'kernel': trial.suggest_categorical('kernel', ['rbf', 'poly', 'linear', 'sigmoid']),
+#             'C': trial.suggest_float("C", 0.1, 3.0, log=True),
+#             'gamma': trial.suggest_categorical('gamma', ['auto', 'scale']),
+#             'degree': trial.suggest_int("degree", 1, 3, log=True)
+#         }
+#
+#         model = SVR(**param)
+#
+#         model.fit(train_x, train_y)
+#
+#         preds = model.predict(test_x)
+#
+#         rmse = mean_squared_error(test_y, preds, squared=False)
+#
+#         return rmse
+#
+#     study = optuna.create_study(direction='minimize')
+#     study.optimize(objective, n_trials=30)
+#     print('Number of finished trials:', len(study.trials))
+#     print('Best trial:', study.best_trial.params)
+#
+#     return study.best_trial.params
+#
+#
+# def final_svm(X_train_df, y_train_df):
+#     params = svmoptuna(X_train_df, y_train_df)
+#     model_svr = SVR(**params)
+#     return model_svr
+
+

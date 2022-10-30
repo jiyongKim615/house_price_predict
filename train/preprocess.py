@@ -1,4 +1,40 @@
 from utils.utils_preprocess import *
+from utils.utils_train import get_outlier_label_by_ecod
+
+
+def get_final_train_test():
+    # 데이터 불러오기
+    train_df, test_df = read_data()
+    test_df_id = test_df['Id']
+    train_df.drop('Id', axis=1, inplace=True)
+    test_df.drop('Id', axis=1, inplace=True)
+    train_df_target_log_transform = get_log_transform(train_df, 'SalePrice')
+    # 학습/테스트 합쳐서 일괄 처리
+    all_data, n_train, y_train_df = \
+        concat_train_test(train_df_target_log_transform, test_df, 'SalePrice')
+    # 결측값 처리
+    all_data = preprocess_missing_data(all_data, train_df, test_df)
+    # 추가 FE
+    all_data = preprocess_feature_encoding(all_data)
+    # 피처 추가
+    all_data['TotalSF'] = \
+        all_data['TotalBsmtSF'] + all_data['1stFlrSF'] + all_data['2ndFlrSF']
+    # skew 처리
+    all_data = preprocess_skew_features(all_data, skew_threshold=0.75, skew_lambda=0.15)
+    # 더미변수 생성
+    all_data = get_dummy(all_data)
+    # 학습/테스트 분리
+    train_df, test_df_no_target = get_train_test(all_data, n_train)
+    # 이상값 처리
+    train_df, no_outlier_train_df, no_outlier_y_train_df, test_df_no_target = \
+        get_outlier_label_by_ecod(train_df, test_df_no_target, y_train_df)
+
+    feature_cols = no_outlier_train_df.columns.tolist()
+
+    X_train = no_outlier_train_df.copy()
+    X_test = test_df_no_target[feature_cols]
+    y_train = no_outlier_y_train_df.copy()
+    return X_train, X_test, y_train, test_df_id
 
 
 def preprocess_missing_data(all_data, train_df, test_df):
